@@ -1,0 +1,25 @@
+# secrets and local configuration
+.env
+
+# python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# node
+node_modules/
+dist/
+.vite/
+
+# data (the Kaggle extracts live outside the repo -- see README)
+data/
+*.csv
+!docs/*.csv
+
+# editors / os
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,72 @@
+# MongoDB for QuantScore.
+#
+#   docker compose up -d        start
+#   docker compose logs -f      watch
+#   docker compose down         stop (data survives in the named volume)
+#   docker compose down -v      stop and wipe the data
+#
+# MySQL is commented out below. Uncomment it only if you do not already
+# have MySQL or MariaDB installed locally.
+
+services:
+  mongo:
+    image: mongo:7.0.14
+    container_name: quantscore-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    command: ["--wiredTigerCacheSizeGB", "1"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # Browse the collections at http://localhost:8081
+  mongo-express:
+    image: mongo-express:1.0.2
+    container_name: quantscore-mongo-express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017
+      ME_CONFIG_BASICAUTH: "false"
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  # Enabled because MariaDB on Windows binds root to Windows SSPI
+  # (auth_gssapi_client), which the Python driver cannot authenticate
+  # against. Port 3307 keeps it clear of any local MySQL/MariaDB install.
+  # To use a local server instead, comment this out and point the
+  # MYSQL_* settings in .env at it.
+  mysql:
+    image: mysql:8.4
+    container_name: quantscore-mysql
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: quantscore
+      MYSQL_DATABASE: quantscore
+    volumes:
+      - mysql_data:/var/lib/mysql
+    # 1G buffer pool to match MongoDB's wiredTigerCacheSizeGB below.
+    # MySQL's 128M default is smaller than the benchmark working set, so
+    # leaving it would measure cache size rather than the two engines.
+    command: ["--local-infile=1", "--innodb-buffer-pool-size=1G"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1",
+             "-uroot", "-pquantscore"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+volumes:
+  mongo_data:
+  mysql_data:

@@ -1,0 +1,24 @@
+# Normalise line endings so five people on Windows, macOS and Linux do not
+# produce whole-file diffs every time someone saves.
+* text=auto eol=lf
+
+# Windows-only helpers keep CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Never munge binaries.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.pdf  binary
+*.ico  binary
+*.woff  binary
+*.woff2 binary
+
+# Collapse the lockfile in pull-request diffs; it is generated, not written.
+frontend/package-lock.json linguist-generated=true -diff
+
+# Report the project as Python + JavaScript rather than "CSS" on GitHub.
+*.sql linguist-detectable=true
